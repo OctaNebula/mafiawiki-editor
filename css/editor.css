@@ -224,41 +224,52 @@ body {
     display: none;
 }
 
-/* ---------- Page Type Selector ---------- */
-.page-type-selector {
-    display: flex;
-    gap: 8px;
-    padding: 0 18px 18px;
+/* ---------- Toggle Switch ---------- */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    margin-left: auto;
+    flex-shrink: 0;
+    cursor: pointer;
 }
 
-.page-type-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 16px 12px;
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
     background: var(--bg-tertiary);
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text-secondary);
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
+    border: 1px solid var(--border);
+    border-radius: 22px;
     transition: all var(--transition);
 }
 
-.page-type-btn:hover {
-    background: var(--bg-hover);
-    border-color: var(--border-light);
-    color: var(--text-primary);
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 2px;
+    bottom: 2px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    transition: all var(--transition);
 }
 
-.page-type-btn.active {
+.toggle-switch input:checked + .toggle-slider {
     background: var(--accent-dim);
     border-color: var(--accent);
-    color: var(--accent);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+    background: var(--accent);
 }
 
 /* ---------- Form Elements ---------- */
@@ -849,10 +860,6 @@ textarea#intro-editor {
 
     .form-row {
         flex-direction: column;
-    }
-
-    .page-type-selector {
-        flex-direction: row;
     }
 
     .topbar h1 {

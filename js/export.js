@@ -130,24 +130,14 @@ const MWExport = (() => {
      */
     function parsePageMarkdown(content, manifest) {
         const data = {
-            pageType: manifest?.type || 'custom',
             title: '',
             description: '',
             filePath: manifest?.suggestedPath || '',
             introText: '',
-            ingameContent: '',
-            tipsContent: '',
-            triviaContent: '',
             customSections: [],
             infoboxTitle: '',
-            roleTeam: 'Good',
-            roleGoal: '',
-            roleMaxPlayers: '',
-            mapStatus: 'Active',
-            mapLockers: '0',
-            mapClosets: '0',
-            mapRooms: '0',
             customAttrs: [],
+            infoboxEnabled: manifest?.infoboxEnabled ?? false,
         };
 
         // Extract frontmatter
@@ -159,14 +149,7 @@ const MWExport = (() => {
             const socialMatch = fm.match(/^social_image:\s*(.+)$/m);
             const bgMatch = fm.match(/^background:\s*(.+)$/m);
 
-            if (titleMatch) {
-                let t = titleMatch[1].trim();
-                // Strip "The " prefix for role pages
-                if (data.pageType === 'role' && t.startsWith('The ')) {
-                    t = t.slice(4);
-                }
-                data.title = t;
-            }
+            if (titleMatch) data.title = titleMatch[1].trim();
             if (descMatch) data.description = descMatch[1].trim();
             if (socialMatch) {
                 const sImg = socialMatch[1].trim();
@@ -184,11 +167,12 @@ const MWExport = (() => {
         // Extract the H1 title (# Title)
         const h1Match = content.match(/^#\s+(.+)$/m);
         if (h1Match && !data.title) {
-            let t = h1Match[1].replace(/\*\*/g, '').trim();
-            if (data.pageType === 'role' && t.startsWith('The ')) {
-                t = t.slice(4);
-            }
-            data.title = t;
+            data.title = h1Match[1].replace(/\*\*/g, '').trim();
+        }
+
+        // Detect infobox presence if manifest didn't specify
+        if (content.includes('<div class="infobox"')) {
+            data.infoboxEnabled = true;
         }
 
         // Extract infobox content from the HTML table
@@ -197,25 +181,17 @@ const MWExport = (() => {
             data.infoboxTitle = infoboxTitleMatch[1];
         }
 
-        // Extract infobox attributes
+        // Extract infobox image
+        const infoboxImgMatch = content.match(/<img src="[^"]*\/assets\/([^"]+)" alt="[^"]*" class="infobox-image"/);
+        if (infoboxImgMatch) {
+            data.infoboxImageName = infoboxImgMatch[1];
+        }
+
+        // Extract all infobox attributes as custom attrs
         const attrRegex = /<th>(.+?)<\/th>\s*<td>(.+?)<\/td>/g;
         let attrMatch;
         while ((attrMatch = attrRegex.exec(content)) !== null) {
-            const key = attrMatch[1];
-            const val = attrMatch[2];
-
-            if (data.pageType === 'role') {
-                if (key === 'Team') data.roleTeam = val;
-                else if (key === 'Goal') data.roleGoal = val;
-                else if (key === 'Max Players') data.roleMaxPlayers = val;
-            } else if (data.pageType === 'map') {
-                if (key === 'Status') data.mapStatus = val;
-                else if (key === 'Lockers') data.mapLockers = val;
-                else if (key === 'Closets') data.mapClosets = val;
-                else if (key === 'Rooms') data.mapRooms = val;
-            } else {
-                data.customAttrs.push({ key, value: val });
-            }
+            data.customAttrs.push({ key: attrMatch[1], value: attrMatch[2] });
         }
 
         // Extract intro text from the flex container's first div
@@ -230,24 +206,29 @@ const MWExport = (() => {
             introHtml = introHtml.replace(/<i>/g, '*');
             introHtml = introHtml.replace(/<\/i>/g, '*');
             data.introText = introHtml.trim();
+        } else {
+            // No infobox — try extracting intro from plain <p> tags after the H1 + ---
+            const plainIntroMatch = content.match(/---\n\s*((?:<p>[\s\S]*?<\/p>\s*)+)/);
+            if (plainIntroMatch) {
+                let introHtml = plainIntroMatch[1].trim();
+                introHtml = introHtml.replace(/<p>/g, '');
+                introHtml = introHtml.replace(/<\/p>/g, '\n\n');
+                introHtml = introHtml.replace(/<b>/g, '**');
+                introHtml = introHtml.replace(/<\/b>/g, '**');
+                introHtml = introHtml.replace(/<i>/g, '*');
+                introHtml = introHtml.replace(/<\/i>/g, '*');
+                data.introText = introHtml.trim();
+            }
         }
 
-        // Extract sections (## **Title** + --- + content)
+        // Extract sections — all are custom now
         const sectionRegex = /## \*\*(.+?)\*\*\s*\n---\n([\s\S]*?)(?=\n## \*\*|$)/g;
         let sectionMatch;
         while ((sectionMatch = sectionRegex.exec(content)) !== null) {
-            const sectionTitle = sectionMatch[1];
-            const sectionContent = sectionMatch[2].trim();
-
-            if (sectionTitle === 'In-Game') {
-                data.ingameContent = sectionContent;
-            } else if (sectionTitle === 'Tips and Tricks') {
-                data.tipsContent = sectionContent;
-            } else if (sectionTitle === 'Trivia') {
-                data.triviaContent = sectionContent;
-            } else {
-                data.customSections.push({ title: sectionTitle, content: sectionContent });
-            }
+            data.customSections.push({
+                title: sectionMatch[1],
+                content: sectionMatch[2].trim(),
+            });
         }
 
         return data;

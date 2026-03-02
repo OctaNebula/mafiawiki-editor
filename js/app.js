@@ -11,7 +11,7 @@
     // State
     // ============================================================
     const state = {
-        pageType: 'role',
+        infoboxEnabled: false,
         images: {
             social: null,  // { name, file, url }
             bg: null,
@@ -32,56 +32,18 @@
     // ============================================================
     function init() {
         MWPreview.init();
-        setupPageTypeSelector();
         setupCollapsibleSections();
+        setupInfoboxToggle();
         setupImageUploads();
         setupCustomAttrs();
         setupCustomSections();
         setupExportImport();
         setupPreviewToggle();
         setupAdmonitionModal();
-        initEasyMDEEditors();
         setupAutoPreview();
 
         // Initial preview
         triggerPreview();
-    }
-
-    // ============================================================
-    // Page Type Selector
-    // ============================================================
-    function setupPageTypeSelector() {
-        const buttons = document.querySelectorAll('.page-type-btn');
-        buttons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                buttons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                state.pageType = btn.dataset.type;
-                updateTypeFields();
-                updateTitleHelp();
-                triggerPreview();
-            });
-        });
-    }
-
-    function updateTypeFields() {
-        const type = state.pageType;
-        document.getElementById('role-fields').hidden = type !== 'role';
-        document.getElementById('map-fields').hidden = type !== 'map';
-        document.getElementById('custom-fields').hidden = type !== 'custom';
-    }
-
-    function updateTitleHelp() {
-        const help = document.getElementById('title-help');
-        if (state.pageType === 'role') {
-            help.textContent = 'Will be displayed as "The [Title]" for role pages';
-            help.style.display = '';
-        } else if (state.pageType === 'map') {
-            help.textContent = 'Maps use the title as-is (no "The" prefix)';
-            help.style.display = '';
-        } else {
-            help.style.display = 'none';
-        }
     }
 
     // ============================================================
@@ -101,18 +63,29 @@
     }
 
     // ============================================================
-    // EasyMDE Editors
+    // Infobox Toggle
     // ============================================================
-    // Admonition toolbar button config for EasyMDE
-    function admonitionToolbarButton(editorRef) {
-        return {
-            name: 'admonition',
-            action: () => openAdmonitionModal(editorRef),
-            className: 'fa fa-exclamation-triangle',
-            title: 'Insert Admonition',
-        };
+    function setupInfoboxToggle() {
+        const toggle = document.getElementById('infobox-toggle');
+        const content = document.getElementById('infobox-content');
+        if (!toggle || !content) return;
+
+        // Prevent toggle click from bubbling to the section header
+        const label = document.getElementById('infobox-toggle-label');
+        if (label) {
+            label.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        toggle.addEventListener('change', () => {
+            state.infoboxEnabled = toggle.checked;
+            content.hidden = !toggle.checked;
+            triggerPreview();
+        });
     }
 
+    // ============================================================
+    // EasyMDE Editors
+    // ============================================================
     // Which editor to insert the admonition into
     let _pendingAdmonitionEditor = null;
 
@@ -182,63 +155,6 @@
                 triggerPreview();
             });
         }
-    }
-
-    function initEasyMDEEditors() {
-        const editorConfigs = [
-            { id: 'ingame-editor', key: 'ingame' },
-            { id: 'tips-editor', key: 'tips' },
-            { id: 'trivia-editor', key: 'trivia' },
-        ];
-
-        for (const config of editorConfigs) {
-            const el = document.getElementById(config.id);
-            if (!el) continue;
-
-            const editorInstance = new EasyMDE({
-                element: el,
-                spellChecker: false,
-                status: false,
-                placeholder: getPlaceholder(config.key),
-                toolbar: [
-                    'bold', 'italic', 'heading', '|',
-                    'unordered-list', 'ordered-list', '|',
-                    'link', 'image', '|',
-                    {
-                        name: 'admonition',
-                        action: () => openAdmonitionModal(editorInstance),
-                        className: 'fa fa-exclamation-triangle',
-                        title: 'Insert Admonition',
-                    },
-                    '|',
-                    'preview', 'guide',
-                ],
-                previewRender: (text) => {
-                    if (typeof marked !== 'undefined') {
-                        return typeof marked.parse === 'function'
-                            ? marked.parse(text)
-                            : marked(text);
-                    }
-                    return text;
-                },
-            });
-
-            editors[config.key] = editorInstance;
-
-            // Listen for changes
-            editors[config.key].codemirror.on('change', () => {
-                triggerPreview();
-            });
-        }
-    }
-
-    function getPlaceholder(key) {
-        const placeholders = {
-            ingame: 'Describe how this role/map works in-game...\n\nUse **bold** for important terms.',
-            tips: 'Share strategy tips and tricks...',
-            trivia: 'Add fun facts and trivia...\n\nEach paragraph becomes a separate item.',
-        };
-        return placeholders[key] || 'Write content here...';
     }
 
     function createEasyMDE(element, placeholder) {
@@ -328,26 +244,6 @@
                 clearImage(clearKey);
             });
         });
-
-        // Insert Image buttons (for inline images in sections)
-        document.querySelectorAll('.btn-insert-image').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const section = btn.dataset.section;
-                const input = document.getElementById(`${section}-image-input`);
-                if (input) input.click();
-            });
-        });
-
-        // Inline image input handler
-        const inlineInput = document.getElementById('ingame-image-input');
-        if (inlineInput) {
-            inlineInput.addEventListener('change', () => {
-                if (inlineInput.files.length > 0) {
-                    insertInlineImage('ingame', inlineInput.files[0]);
-                    inlineInput.value = '';
-                }
-            });
-        }
     }
 
     function handleImageFile(inputId, file) {
@@ -423,27 +319,8 @@
         triggerPreview();
     }
 
-    function insertInlineImage(section, file) {
-        if (!file || !file.type.startsWith('image/')) return;
-
-        const url = URL.createObjectURL(file);
-        state.images.inline.push({ name: file.name, file, url, section });
-
-        // Insert image markdown into the editor
-        const editor = editors[section];
-        if (editor) {
-            const imgMarkdown = `\n<img src="https://mafiawiki.astrofare.xyz/assets/${file.name}" alt="${file.name}" class="infobox-image" style="width: 100%;">\n`;
-            const cm = editor.codemirror;
-            const cursor = cm.getCursor();
-            cm.replaceRange(imgMarkdown, cursor);
-        }
-
-        showToast(`Image "${file.name}" inserted. It will be included in the .mwp export.`, 'info');
-        triggerPreview();
-    }
-
     // ============================================================
-    // Custom Attributes (for Custom page type)
+    // Custom Attributes (Infobox)
     // ============================================================
     function setupCustomAttrs() {
         document.getElementById('btn-add-attr')?.addEventListener('click', () => {
@@ -634,8 +511,7 @@
         // Listen to all text inputs for preview updates
         const textInputs = [
             'page-title', 'page-description', 'page-slug',
-            'infobox-title', 'role-team', 'role-goal', 'role-maxplayers',
-            'map-status', 'map-lockers', 'map-closets', 'map-rooms',
+            'infobox-title',
         ];
 
         for (const id of textInputs) {
@@ -658,33 +534,17 @@
     // ============================================================
     function gatherEditorData() {
         const data = {
-            pageType: state.pageType,
+            infoboxEnabled: state.infoboxEnabled,
             title: document.getElementById('page-title')?.value?.trim() || '',
             description: document.getElementById('page-description')?.value?.trim() || '',
             filePath: document.getElementById('page-slug')?.value?.trim() || '',
             introText: document.getElementById('intro-editor')?.value?.trim() || '',
             infoboxTitle: document.getElementById('infobox-title')?.value?.trim() || '',
 
-            // Role fields
-            roleTeam: document.getElementById('role-team')?.value || 'Good',
-            roleGoal: document.getElementById('role-goal')?.value?.trim() || '',
-            roleMaxPlayers: document.getElementById('role-maxplayers')?.value?.trim() || '',
-
-            // Map fields
-            mapStatus: document.getElementById('map-status')?.value || 'Active',
-            mapLockers: document.getElementById('map-lockers')?.value || '0',
-            mapClosets: document.getElementById('map-closets')?.value || '0',
-            mapRooms: document.getElementById('map-rooms')?.value || '0',
-
-            // Custom attrs
+            // Custom attrs (infobox attributes)
             customAttrs: state.customAttrs.map(a => ({ key: a.key, value: a.value })),
 
-            // Editor content
-            ingameContent: editors.ingame?.value() || '',
-            tipsContent: editors.tips?.value() || '',
-            triviaContent: editors.trivia?.value() || '',
-
-            // Custom sections
+            // Sections
             customSections: state.customSections.map(s => ({
                 title: document.querySelector(`[data-section-id="${s.id}"] .custom-section-title-input`)?.value || '',
                 content: s.editor?.value() || '',
@@ -699,9 +559,7 @@
         // Generate slug if not provided
         if (!data.filePath && data.title) {
             const slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-            if (data.pageType === 'role') data.filePath = `roles/${slug}`;
-            else if (data.pageType === 'map') data.filePath = `maps/${slug}`;
-            else data.filePath = slug;
+            data.filePath = slug;
         }
         data.slug = data.filePath?.split('/').pop() || data.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'page';
 
@@ -731,14 +589,6 @@
     // Load Editor State (from import)
     // ============================================================
     function loadEditorState(data) {
-        // Page type
-        state.pageType = data.pageType || 'role';
-        document.querySelectorAll('.page-type-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.type === state.pageType);
-        });
-        updateTypeFields();
-        updateTitleHelp();
-
         // Text fields
         setInputValue('page-title', data.title);
         setInputValue('page-description', data.description);
@@ -746,21 +596,15 @@
         setInputValue('infobox-title', data.infoboxTitle);
         setInputValue('intro-editor', data.introText);
 
-        // Role fields
-        setInputValue('role-team', data.roleTeam);
-        setInputValue('role-goal', data.roleGoal);
-        setInputValue('role-maxplayers', data.roleMaxPlayers);
-
-        // Map fields
-        setInputValue('map-status', data.mapStatus);
-        setInputValue('map-lockers', data.mapLockers);
-        setInputValue('map-closets', data.mapClosets);
-        setInputValue('map-rooms', data.mapRooms);
-
-        // Editor content
-        if (editors.ingame) editors.ingame.value(data.ingameContent || '');
-        if (editors.tips) editors.tips.value(data.tipsContent || '');
-        if (editors.trivia) editors.trivia.value(data.triviaContent || '');
+        // Infobox toggle
+        const hasInfobox = data.infoboxEnabled !== undefined ? data.infoboxEnabled : (data.customAttrs && data.customAttrs.length > 0);
+        const toggle = document.getElementById('infobox-toggle');
+        const content = document.getElementById('infobox-content');
+        if (toggle) {
+            toggle.checked = hasInfobox;
+            state.infoboxEnabled = hasInfobox;
+        }
+        if (content) content.hidden = !hasInfobox;
 
         // Custom attributes
         state.customAttrs = [];
@@ -771,7 +615,7 @@
             }
         }
 
-        // Custom sections — remove existing, add imported
+        // Sections — remove existing, add imported
         for (const s of [...state.customSections]) {
             removeCustomSection(s.id);
         }
@@ -784,7 +628,6 @@
         // Images from .mwp
         if (data.imageFiles) {
             for (const img of data.imageFiles) {
-                // Try to match to the correct slot
                 if (data.socialImageName && img.name === data.socialImageName) {
                     state.images.social = img;
                     showImagePreview('social-image-preview', 'social-image-upload', img.url);

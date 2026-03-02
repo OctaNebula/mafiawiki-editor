@@ -5,8 +5,8 @@
  * Every wiki page follows this structure:
  *   1. YAML frontmatter
  *   2. # Title + ---
- *   3. <style> block for mobile responsive infobox
- *   4. Flex container with intro HTML + infobox table
+ *   3. (Optional) <style> block + flex container with intro + infobox
+ *   4. Or just intro text if infobox is disabled
  *   5. Sections: ## **Name** + --- + content
  */
 
@@ -41,28 +41,10 @@ const MWTemplates = (() => {
      * Generate the YAML frontmatter block.
      */
     function generateFrontmatter(data) {
-        const pageType = data.pageType || 'role';
         const title = data.title || 'Untitled';
 
-        // Build display title
-        let displayTitle;
-        if (pageType === 'role') {
-            displayTitle = `The ${title}`;
-        } else {
-            displayTitle = title;
-        }
-
         // Auto-generate description if not provided
-        let description = data.description;
-        if (!description) {
-            if (pageType === 'role') {
-                description = `This article explains the role of the ${title}.`;
-            } else if (pageType === 'map') {
-                description = `This article gives information about the ${title} map.`;
-            } else {
-                description = `This article is about ${title}.`;
-            }
-        }
+        const description = data.description || `This article is about ${title}.`;
 
         // Image paths
         const socialImage = data.socialImageName
@@ -75,7 +57,7 @@ const MWTemplates = (() => {
 
         return [
             '---',
-            `title: ${displayTitle}`,
+            `title: ${title}`,
             `description: ${description}`,
             `social_image: ${socialImage}`,
             `background: ${background}`,
@@ -85,7 +67,7 @@ const MWTemplates = (() => {
 
     /**
      * Generate the mobile-responsive <style> block.
-     * This is identical across all wiki pages.
+     * This is identical across all wiki pages that have an infobox.
      */
     function generateMobileStyle() {
         return `<style>
@@ -108,9 +90,9 @@ const MWTemplates = (() => {
 
     /**
      * Generate the infobox HTML table.
+     * Only uses custom attributes.
      */
     function generateInfobox(data) {
-        const pageType = data.pageType || 'role';
         const infoboxTitle = data.infoboxTitle || data.title || 'Untitled';
 
         // Image source
@@ -118,31 +100,9 @@ const MWTemplates = (() => {
         const imgSrc = `${WIKI_BASE}/assets/${imgName}`;
         const imgAlt = `${infoboxTitle} Image`;
 
-        // Build attribute rows based on page type
+        // Build attribute rows from custom attrs only
         let attrRows = '';
-
-        if (pageType === 'role') {
-            const attrs = [
-                ['Team', data.roleTeam || 'Good'],
-                ['Goal', data.roleGoal || ''],
-                ['Max Players', data.roleMaxPlayers || '1'],
-            ];
-            for (const [key, val] of attrs) {
-                if (val) {
-                    attrRows += `            <tr>\n                <th>${key}</th>\n                <td>${val}</td>\n            </tr>\n`;
-                }
-            }
-        } else if (pageType === 'map') {
-            const attrs = [
-                ['Status', data.mapStatus || 'Active'],
-                ['Lockers', data.mapLockers || '0'],
-                ['Closets', data.mapClosets || '0'],
-                ['Rooms', data.mapRooms || '0'],
-            ];
-            for (const [key, val] of attrs) {
-                attrRows += `            <tr>\n                <th>${key}</th>\n                <td>${val}</td>\n            </tr>\n`;
-            }
-        } else if (pageType === 'custom' && data.customAttrs) {
+        if (data.customAttrs) {
             for (const attr of data.customAttrs) {
                 if (attr.key && attr.value) {
                     attrRows += `            <tr>\n                <th>${attr.key}</th>\n                <td>${attr.value}</td>\n            </tr>\n`;
@@ -192,16 +152,7 @@ ${content.trim()}
      * Generate the complete page Markdown.
      */
     function generatePage(data) {
-        const pageType = data.pageType || 'role';
         const title = data.title || 'Untitled';
-
-        // Build display title
-        let displayTitle;
-        if (pageType === 'role') {
-            displayTitle = `The ${title}`;
-        } else {
-            displayTitle = title;
-        }
 
         const parts = [];
 
@@ -210,29 +161,26 @@ ${content.trim()}
         parts.push('');
 
         // 2. Page title
-        parts.push(`# ${displayTitle}`);
+        parts.push(`# ${title}`);
         parts.push('---');
         parts.push('');
 
-        // 3. Mobile style block
-        parts.push(generateMobileStyle());
+        // 3. Intro + optional infobox
+        if (data.infoboxEnabled) {
+            // With infobox: mobile style + flex container
+            parts.push(generateMobileStyle());
+            parts.push('');
+            parts.push(generateFlexContainer(data));
+        } else {
+            // Without infobox: just intro paragraphs
+            const introHtml = introTextToHtml(data.introText);
+            if (introHtml) {
+                parts.push(introHtml.trim());
+            }
+        }
         parts.push('');
 
-        // 4. Flex container (intro + infobox)
-        parts.push(generateFlexContainer(data));
-        parts.push('');
-
-        // 5. Standard sections
-        const ingame = generateSection('In-Game', data.ingameContent);
-        if (ingame) parts.push(ingame);
-
-        const tips = generateSection('Tips and Tricks', data.tipsContent);
-        if (tips) parts.push(tips);
-
-        const trivia = generateSection('Trivia', data.triviaContent);
-        if (trivia) parts.push(trivia);
-
-        // 6. Custom sections
+        // 4. Custom sections only
         if (data.customSections) {
             for (const section of data.customSections) {
                 if (section.title && section.content) {
@@ -249,29 +197,17 @@ ${content.trim()}
      * Generate the manifest.json for .mwp packages.
      */
     function generateManifest(data) {
-        const pageType = data.pageType || 'role';
         const title = data.title || 'Untitled';
         const slug = data.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-        // Determine suggested path
-        let suggestedPath;
-        if (data.filePath) {
-            suggestedPath = data.filePath;
-        } else if (pageType === 'role') {
-            suggestedPath = `roles/${slug}`;
-        } else if (pageType === 'map') {
-            suggestedPath = `maps/${slug}`;
-        } else {
-            suggestedPath = slug;
-        }
+        const suggestedPath = data.filePath || slug;
 
         return {
             version: '1.0',
-            type: pageType,
             title: title,
-            displayTitle: pageType === 'role' ? `The ${title}` : title,
             suggestedPath: suggestedPath,
             fileName: `${slug}.md`,
+            infoboxEnabled: !!data.infoboxEnabled,
             createdAt: new Date().toISOString(),
             assets: data.assetFiles ? data.assetFiles.map(f => f.name) : [],
         };
