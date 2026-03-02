@@ -311,6 +311,53 @@
     <!-- Hidden file input for .mwp import -->
     <input type="file" id="import-input" accept=".mwp,.zip" hidden>
 
+    <!-- Admonition Picker Modal -->
+    <div id="admonition-modal" class="modal-overlay" hidden>
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Insert Admonition</h3>
+                <button class="modal-close" id="admonition-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="admonition-type">Type</label>
+                    <select id="admonition-type">
+                        <option value="note">Note</option>
+                        <option value="abstract">Abstract</option>
+                        <option value="info">Info</option>
+                        <option value="tip">Tip</option>
+                        <option value="success">Success</option>
+                        <option value="question">Question</option>
+                        <option value="warning">Warning</option>
+                        <option value="failure">Failure</option>
+                        <option value="danger">Danger</option>
+                        <option value="bug">Bug</option>
+                        <option value="example">Example</option>
+                        <option value="quote">Quote</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="admonition-title">Title (optional)</label>
+                    <input type="text" id="admonition-title" placeholder="Leave empty for default title">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="admonition-collapsible"> Collapsible
+                    </label>
+                </div>
+                <div class="form-group" id="admonition-open-group" hidden>
+                    <label>
+                        <input type="checkbox" id="admonition-open"> Open by default
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="admonition-cancel">Cancel</button>
+                <button class="btn btn-primary" id="admonition-insert">Insert</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification container -->
     <div id="toast-container"></div>
 

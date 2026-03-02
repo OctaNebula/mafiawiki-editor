@@ -39,6 +39,7 @@
         setupCustomSections();
         setupExportImport();
         setupPreviewToggle();
+        setupAdmonitionModal();
         initEasyMDEEditors();
         setupAutoPreview();
 
@@ -102,6 +103,87 @@
     // ============================================================
     // EasyMDE Editors
     // ============================================================
+    // Admonition toolbar button config for EasyMDE
+    function admonitionToolbarButton(editorRef) {
+        return {
+            name: 'admonition',
+            action: () => openAdmonitionModal(editorRef),
+            className: 'fa fa-exclamation-triangle',
+            title: 'Insert Admonition',
+        };
+    }
+
+    // Which editor to insert the admonition into
+    let _pendingAdmonitionEditor = null;
+
+    function openAdmonitionModal(editorRef) {
+        _pendingAdmonitionEditor = editorRef;
+        const modal = document.getElementById('admonition-modal');
+        if (modal) {
+            modal.hidden = false;
+            // Reset form
+            document.getElementById('admonition-type').value = 'note';
+            document.getElementById('admonition-title').value = '';
+            document.getElementById('admonition-collapsible').checked = false;
+            document.getElementById('admonition-open').checked = false;
+            document.getElementById('admonition-open-group').hidden = true;
+        }
+    }
+
+    function setupAdmonitionModal() {
+        const modal = document.getElementById('admonition-modal');
+        const closeBtn = document.getElementById('admonition-modal-close');
+        const cancelBtn = document.getElementById('admonition-cancel');
+        const insertBtn = document.getElementById('admonition-insert');
+        const collapsibleCb = document.getElementById('admonition-collapsible');
+
+        function closeModal() {
+            if (modal) modal.hidden = true;
+            _pendingAdmonitionEditor = null;
+        }
+
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (modal) modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        if (collapsibleCb) {
+            collapsibleCb.addEventListener('change', () => {
+                const openGroup = document.getElementById('admonition-open-group');
+                if (openGroup) openGroup.hidden = !collapsibleCb.checked;
+            });
+        }
+
+        if (insertBtn) {
+            insertBtn.addEventListener('click', () => {
+                const type = document.getElementById('admonition-type').value;
+                const title = document.getElementById('admonition-title').value.trim();
+                const collapsible = document.getElementById('admonition-collapsible').checked;
+                const openByDefault = document.getElementById('admonition-open').checked;
+
+                let prefix;
+                if (collapsible && openByDefault) prefix = '???+';
+                else if (collapsible) prefix = '???';
+                else prefix = '!!!';
+
+                const titlePart = title ? ` "${title}"` : '';
+                const snippet = `${prefix} ${type}${titlePart}\n    Your content here\n\n`;
+
+                const editor = _pendingAdmonitionEditor;
+                if (editor) {
+                    const cm = editor.codemirror;
+                    const cursor = cm.getCursor();
+                    cm.replaceRange(snippet, cursor);
+                    cm.focus();
+                }
+
+                closeModal();
+                triggerPreview();
+            });
+        }
+    }
+
     function initEasyMDEEditors() {
         const editorConfigs = [
             { id: 'ingame-editor', key: 'ingame' },
@@ -113,7 +195,7 @@
             const el = document.getElementById(config.id);
             if (!el) continue;
 
-            editors[config.key] = new EasyMDE({
+            const editorInstance = new EasyMDE({
                 element: el,
                 spellChecker: false,
                 status: false,
@@ -122,6 +204,13 @@
                     'bold', 'italic', 'heading', '|',
                     'unordered-list', 'ordered-list', '|',
                     'link', 'image', '|',
+                    {
+                        name: 'admonition',
+                        action: () => openAdmonitionModal(editorInstance),
+                        className: 'fa fa-exclamation-triangle',
+                        title: 'Insert Admonition',
+                    },
+                    '|',
                     'preview', 'guide',
                 ],
                 previewRender: (text) => {
@@ -133,6 +222,8 @@
                     return text;
                 },
             });
+
+            editors[config.key] = editorInstance;
 
             // Listen for changes
             editors[config.key].codemirror.on('change', () => {
@@ -151,7 +242,8 @@
     }
 
     function createEasyMDE(element, placeholder) {
-        return new EasyMDE({
+        let editorInstance;
+        editorInstance = new EasyMDE({
             element,
             spellChecker: false,
             status: false,
@@ -160,6 +252,13 @@
                 'bold', 'italic', 'heading', '|',
                 'unordered-list', 'ordered-list', '|',
                 'link', 'image', '|',
+                {
+                    name: 'admonition',
+                    action: () => openAdmonitionModal(editorInstance),
+                    className: 'fa fa-exclamation-triangle',
+                    title: 'Insert Admonition',
+                },
+                '|',
                 'preview', 'guide',
             ],
             previewRender: (text) => {
@@ -171,6 +270,7 @@
                 return text;
             },
         });
+        return editorInstance;
     }
 
     // ============================================================

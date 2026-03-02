@@ -859,3 +859,249 @@ textarea#intro-editor {
         font-size: 14px;
     }
 }
+
+/* ---------- Admonition Modal ---------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.modal-overlay[hidden] {
+    display: none;
+}
+
+.modal-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 420px;
+    max-width: 90vw;
+    box-shadow: var(--shadow-lg);
+    animation: modal-in 200ms ease forwards;
+}
+
+@keyframes modal-in {
+    from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+}
+
+.modal-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body .form-group {
+    margin-bottom: 14px;
+}
+
+.modal-body label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.modal-body input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+}
+
+/* ---------- Admonition Preview Styles ---------- */
+.preview-wiki-page .admonition {
+    border-left: 4px solid;
+    border-radius: var(--radius);
+    margin: 16px 0;
+    overflow: hidden;
+    font-size: 13px;
+}
+
+.preview-wiki-page .admonition-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.preview-wiki-page .admonition-icon {
+    flex-shrink: 0;
+    font-size: 15px;
+}
+
+.preview-wiki-page .admonition-body {
+    padding: 4px 14px 12px;
+}
+
+.preview-wiki-page .admonition-body p {
+    margin-bottom: 8px;
+}
+
+.preview-wiki-page .admonition-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* Collapsible admonitions (details/summary) */
+.preview-wiki-page details.admonition {
+    cursor: default;
+}
+
+.preview-wiki-page details.admonition > summary {
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.preview-wiki-page details.admonition > summary::before {
+    content: '\25B6';
+    font-size: 10px;
+    margin-right: 6px;
+    transition: transform 200ms ease;
+    display: inline-block;
+}
+
+.preview-wiki-page details[open].admonition > summary::before {
+    transform: rotate(90deg);
+}
+
+.preview-wiki-page details.admonition > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* --- Admonition colour variants --- */
+/* Note (blue-grey) */
+.admonition-note {
+    border-color: #448aff;
+    background: rgba(68, 138, 255, 0.08);
+}
+.admonition-note .admonition-title { color: #448aff; background: rgba(68, 138, 255, 0.12); }
+
+/* Abstract (light blue) */
+.admonition-abstract {
+    border-color: #00b0ff;
+    background: rgba(0, 176, 255, 0.08);
+}
+.admonition-abstract .admonition-title { color: #00b0ff; background: rgba(0, 176, 255, 0.12); }
+
+/* Info (cyan) */
+.admonition-info {
+    border-color: #00b8d4;
+    background: rgba(0, 184, 212, 0.08);
+}
+.admonition-info .admonition-title { color: #00b8d4; background: rgba(0, 184, 212, 0.12); }
+
+/* Tip (teal) */
+.admonition-tip {
+    border-color: #00bfa5;
+    background: rgba(0, 191, 165, 0.08);
+}
+.admonition-tip .admonition-title { color: #00bfa5; background: rgba(0, 191, 165, 0.12); }
+
+/* Success (green) */
+.admonition-success {
+    border-color: #00c853;
+    background: rgba(0, 200, 83, 0.08);
+}
+.admonition-success .admonition-title { color: #00c853; background: rgba(0, 200, 83, 0.12); }
+
+/* Question (light green) */
+.admonition-question {
+    border-color: #64dd17;
+    background: rgba(100, 221, 23, 0.08);
+}
+.admonition-question .admonition-title { color: #64dd17; background: rgba(100, 221, 23, 0.12); }
+
+/* Warning (orange) */
+.admonition-warning {
+    border-color: #ff9100;
+    background: rgba(255, 145, 0, 0.08);
+}
+.admonition-warning .admonition-title { color: #ff9100; background: rgba(255, 145, 0, 0.12); }
+
+/* Failure (red-orange) */
+.admonition-failure {
+    border-color: #ff5252;
+    background: rgba(255, 82, 82, 0.08);
+}
+.admonition-failure .admonition-title { color: #ff5252; background: rgba(255, 82, 82, 0.12); }
+
+/* Danger (red) */
+.admonition-danger {
+    border-color: #ff1744;
+    background: rgba(255, 23, 68, 0.08);
+}
+.admonition-danger .admonition-title { color: #ff1744; background: rgba(255, 23, 68, 0.12); }
+
+/* Bug (pink) */
+.admonition-bug {
+    border-color: #f50057;
+    background: rgba(245, 0, 87, 0.08);
+}
+.admonition-bug .admonition-title { color: #f50057; background: rgba(245, 0, 87, 0.12); }
+
+/* Example (purple) */
+.admonition-example {
+    border-color: #7c4dff;
+    background: rgba(124, 77, 255, 0.08);
+}
+.admonition-example .admonition-title { color: #7c4dff; background: rgba(124, 77, 255, 0.12); }
+
+/* Quote (grey) */
+.admonition-quote {
+    border-color: #9e9e9e;
+    background: rgba(158, 158, 158, 0.08);
+}
+.admonition-quote .admonition-title { color: #9e9e9e; background: rgba(158, 158, 158, 0.12); }
