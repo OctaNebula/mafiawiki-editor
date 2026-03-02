@@ -672,7 +672,22 @@
     function triggerPreview() {
         const data = gatherEditorData();
         const markdown = MWTemplates.generatePage(data);
-        MWPreview.update(markdown);
+
+        // Build local image map so preview shows uploaded images
+        // instead of unresolvable wiki URLs
+        const imageMap = {};
+        for (const key of ['social', 'bg', 'infobox']) {
+            if (state.images[key]) {
+                imageMap[state.images[key].name] = state.images[key].url;
+            }
+        }
+        for (const img of state.images.inline) {
+            if (img.name && img.url) {
+                imageMap[img.name] = img.url;
+            }
+        }
+
+        MWPreview.update(markdown, false, imageMap);
     }
 
     // ============================================================

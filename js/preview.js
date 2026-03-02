@@ -70,7 +70,7 @@ const MWPreview = (() => {
     /**
      * Render the visual preview (approximates wiki look).
      */
-    function renderVisual(markdownSource) {
+    function renderVisual(markdownSource, imageMap) {
         const container = document.getElementById('preview-wiki-content');
         if (!container) return;
 
@@ -126,6 +126,20 @@ const MWPreview = (() => {
             }
 
             container.innerHTML = html;
+
+            // Replace wiki asset URLs with local blob URLs for preview
+            if (imageMap && Object.keys(imageMap).length > 0) {
+                container.querySelectorAll('img').forEach(img => {
+                    const src = img.getAttribute('src');
+                    if (!src) return;
+                    for (const [filename, blobUrl] of Object.entries(imageMap)) {
+                        if (src.includes('/assets/' + filename)) {
+                            img.src = blobUrl;
+                            break;
+                        }
+                    }
+                });
+            }
         } catch (e) {
             console.error('Preview render error:', e);
             container.innerHTML = '<p class="preview-placeholder">Error rendering preview</p>';
@@ -150,16 +164,16 @@ const MWPreview = (() => {
     /**
      * Update the preview (debounced).
      */
-    function update(markdownSource, immediate = false) {
+    function update(markdownSource, immediate = false, imageMap = {}) {
         if (immediate) {
-            renderVisual(markdownSource);
+            renderVisual(markdownSource, imageMap);
             renderSource(markdownSource);
             return;
         }
 
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-            renderVisual(markdownSource);
+            renderVisual(markdownSource, imageMap);
             renderSource(markdownSource);
         }, 300);
     }
