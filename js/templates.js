@@ -200,11 +200,13 @@ ${content.trim()}
         const title = data.title || 'Untitled';
         const slug = data.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-        const suggestedPath = data.filePath || slug;
+        const category = data.category || 'roles';
+        const suggestedPath = data.filePath || `${category}/${slug}`;
 
         return {
             version: '1.0',
             title: title,
+            category: category,
             suggestedPath: suggestedPath,
             fileName: `${slug}.md`,
             infoboxEnabled: !!data.infoboxEnabled,

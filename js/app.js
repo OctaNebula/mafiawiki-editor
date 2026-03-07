@@ -510,7 +510,7 @@
     function setupAutoPreview() {
         // Listen to all text inputs for preview updates
         const textInputs = [
-            'page-title', 'page-description', 'page-slug',
+            'page-title', 'page-description', 'page-category',
             'infobox-title',
         ];
 
@@ -537,7 +537,7 @@
             infoboxEnabled: state.infoboxEnabled,
             title: document.getElementById('page-title')?.value?.trim() || '',
             description: document.getElementById('page-description')?.value?.trim() || '',
-            filePath: document.getElementById('page-slug')?.value?.trim() || '',
+            category: document.getElementById('page-category')?.value || 'roles',
             introText: document.getElementById('intro-editor')?.value?.trim() || '',
             infoboxTitle: document.getElementById('infobox-title')?.value?.trim() || '',
 
@@ -556,12 +556,12 @@
             infoboxImageName: state.images.infobox?.name || '',
         };
 
-        // Generate slug if not provided
-        if (!data.filePath && data.title) {
-            const slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-            data.filePath = slug;
-        }
-        data.slug = data.filePath?.split('/').pop() || data.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'page';
+        // Generate slug from title
+        const slug = data.title
+            ? data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+            : 'page';
+        data.slug = slug;
+        data.filePath = `${data.category}/${slug}`;
 
         return data;
     }
@@ -592,7 +592,7 @@
         // Text fields
         setInputValue('page-title', data.title);
         setInputValue('page-description', data.description);
-        setInputValue('page-slug', data.filePath);
+        setInputValue('page-category', data.category || 'roles');
         setInputValue('infobox-title', data.infoboxTitle);
         setInputValue('intro-editor', data.introText);
 

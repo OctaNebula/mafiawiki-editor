@@ -71,9 +71,16 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="page-slug">File Path</label>
-                            <input type="text" id="page-slug" placeholder="Auto-generated from title">
-                            <span class="help-text">Where this page lives in the wiki (e.g. roles/detective)</span>
+                            <label for="page-category">Category</label>
+                            <select id="page-category">
+                                <option value="roles">Roles</option>
+                                <option value="maps">Maps</option>
+                                <option value="perks">Perks</option>
+                                <option value="disguises">Disguises</option>
+                                <option value="lore">Lore</option>
+                                <option value="meta">Meta</option>
+                            </select>
+                            <span class="help-text">Determines the wiki folder (e.g. roles/detective)</span>
                         </div>
                     </div>
                     <div class="form-row">

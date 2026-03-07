@@ -132,7 +132,7 @@ const MWExport = (() => {
         const data = {
             title: '',
             description: '',
-            filePath: manifest?.suggestedPath || '',
+            category: manifest?.category || 'roles',
             introText: '',
             customSections: [],
             infoboxTitle: '',
